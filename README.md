@@ -24,9 +24,8 @@ This project presents a smart lock system that utilizes hand gesture recognition
 5. **Action Layer:** Controls the unlocking mechanism and provides feedback.  
 
 ## Dependencies  
-- OpenCV  
-- MediaPipe  
-- TensorFlow/PyTorch  
+- OpenCV   
+- TensorFlow
 - Raspberry Pi GPIO Libraries  
 
 ## Installation & Setup  
@@ -39,9 +38,13 @@ This project presents a smart lock system that utilizes hand gesture recognition
    ```bash  
    pip install -r requirements.txt  
    ```  
-3. Run the system:  
+3. Export Python Path:
+   ```bash
+   export PYTHOnPATH=$PWD
+   ```
+4. Run the system:  
    ```bash  
-   python main.py  
+   python models/hand_tracker.py  
    ```  
   
 
