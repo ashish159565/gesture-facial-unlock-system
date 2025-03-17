@@ -3,10 +3,10 @@ import numpy as np
 import tensorflow.lite as tflite
 
 # Load TFLite models
-palm_interpreter = tflite.Interpreter(model_path='models/palm_detection_full.tflite')
+palm_interpreter = tflite.Interpreter(model_path='model_weights/palm_detection_full.tflite')
 palm_interpreter.allocate_tensors()
 
-hand_interpreter = tflite.Interpreter(model_path='models/hand_landmark_full.tflite')
+hand_interpreter = tflite.Interpreter(model_path='model_weights/hand_landmark_full.tflite')
 hand_interpreter.allocate_tensors()
 
 # Get input/output details
