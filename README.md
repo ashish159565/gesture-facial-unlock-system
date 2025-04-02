@@ -1,55 +1,127 @@
-# Gesture and Facial Recognition-Based Smart Lock System  
+# Gesture Recognition System
 
-## Overview  
-This project presents a smart lock system that utilizes hand gesture recognition and facial recognition for secure and accessible unlocking mechanisms. By combining computer vision and deep learning techniques, we aim to provide a contactless, keyless security solution that enhances accessibility and security.  
+A real-time gesture recognition system that can detect peace signs using both landmark-based and CNN-based approaches.
 
-## Features  
-- **Hand Gesture Recognition:** Uses camera input and gesture classification to determine unlock commands.  
-- **Facial Recognition:** Serves as a secondary authentication mechanism or override feature.  
-- **Confidence-Based Decision Layer:** Combines gesture and facial recognition confidence scores to determine access.  
-- **Secure Action Layer:** Controls the unlocking mechanism and provides feedback.  
+## Features
 
-## System Design  
-- **Hardware:** Raspberry Pi 5 with a camera and GPIO-connected servo motor for lock control.  
-- **Software & Models:** Convolutional Neural Networks (CNNs) and Long Short-Term Memory (LSTM) networks for gesture recognition; facial recognition techniques for identity matching.  
-- **Optimization Techniques:** Dynamic Time Warping (DTW) and Elastic Matching for improved accuracy.  
+- Real-time hand tracking
+- Peace sign detection using two methods:
+  - Landmark-based detection (no training required)
+  - CNN-based detection (requires training)
+- Live webcam feed with visualization
+- Data collection and training pipeline
 
-## Workflow  
+## Prerequisites
 
-![Project Workflow](CS5100_Group_Project.png)  
-1. **Input Processing:** Captures camera input for gesture and facial recognition.  
-2. **Gesture Recognition:** Tracks hand movements, classifies gestures, and assigns confidence scores.  
-3. **Facial Recognition:** Extracts features, matches identities, and assigns confidence scores.  
-4. **Decision Layer:** Combines scores and checks against a threshold to determine authentication.  
-5. **Action Layer:** Controls the unlocking mechanism and provides feedback.  
-
-## Dependencies  
-- OpenCV   
+- Python 3.8+
+- OpenCV
 - TensorFlow
-- Raspberry Pi GPIO Libraries  
+- PyTorch
+- NumPy
+- PIL
 
-## Installation & Setup  
-1. Clone the repository:  
-   ```bash  
-   git clone https://github.com/gesture-facial-unlock-system.git  
-   cd gesture-facial-unlock-system  
-   ```  
-2. Install dependencies:  
-   ```bash  
-   pip install -r requirements.txt  
-   ```  
-3. Export Python Path:
-   ```bash
-   export PYTHOnPATH=$PWD
-   ```
-4. Run the system:  
-   ```bash  
-   python models/hand_tracker.py  
-   ```  
-  
+Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-## Contributors  
-- Ashish Gajjela
-- Neil Israni
-- Justin Trinh
-- Brandan Yong 
+## Project Structure
+
+```
+.
+├── models/
+│   ├── hand_tracker.py      # Hand tracking and landmark detection
+│   ├── gesture_classifier.py # CNN model for gesture classification
+│   ├── palm_detector.py     # Palm detection
+│   └── keypoint_detector.py # Keypoint detection
+├── model_weights/
+│   ├── palm_detection_full.tflite
+│   └── hand_landmark_full.tflite
+├── training_data/          # Created after data collection
+│   ├── peace/             # Peace sign images
+│   └── not_peace/         # Non-peace sign images
+├── collect_data.py        # Data collection script
+├── train_model.py         # Model training script
+└── run_trainer.py         # Real-time recognition script
+```
+
+## Usage
+
+### 1. Collect Training Data
+
+Run the data collection script:
+```bash
+python collect_data.py
+```
+
+**Instructions for Data Collection:**
+1. Press 'p' to start collecting peace sign images
+   - Show your hand making a peace sign (✌️)
+   - Vary angles and distances
+   - Collect about 100 images
+   - Press 's' to stop
+
+2. Press 'n' to start collecting non-peace sign images
+   - Show various other hand gestures
+   - Vary angles and distances
+   - Collect about 100 images
+   - Press 's' to stop
+
+3. Press 'q' to quit
+
+**Tips for Data Collection:**
+- Ensure good lighting
+- Keep hand within camera frame
+- Move slowly between poses
+- Vary hand positions and angles
+
+### 2. Train the Model
+
+After collecting data, train the model:
+```bash
+python train_model.py
+```
+
+This will:
+- Load collected images
+- Train the CNN model
+- Save the trained model as `model_weights/gesture_classifier.keras`
+
+### 3. Run Gesture Recognition
+
+Run the real-time recognition:
+```bash
+python run_trainer.py
+```
+
+**Features:**
+- Real-time hand tracking visualization
+- Peace sign detection using both methods
+- On-screen status display
+- Press 'q' to quit
+
+## How It Works
+
+### Landmark-Based Detection
+- Uses 21 hand keypoints
+- Checks geometric relationships between fingers
+- No training required
+- Works immediately
+
+### CNN-Based Detection
+- Uses trained neural network
+- Learns from collected examples
+- More flexible but requires training
+- Improves with more training data
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

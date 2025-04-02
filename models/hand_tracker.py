@@ -4,8 +4,8 @@ import torch
 import torchvision.transforms as transforms
 import numpy as np
 from PIL import Image
-from palm_detector import PalmDetector
-from keypoint_detector import KeyPointDetector
+from .palm_detector import PalmDetector
+from .keypoint_detector import KeyPointDetector
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -31,12 +31,18 @@ class HandTracker:
         """
         self.palm_detector = PalmDetector(model_path=palmDetectorPath)
         self.keypoint_detector = KeyPointDetector(model_path=keyPointModelPath)
+        self.last_landmarks = None
         
         self.transform = transforms.Compose([
             transforms.Resize((128, 128)),  # Resize to 128x128
             transforms.ToTensor(),          # Convert to tensor
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize
         ])
+
+    def get_landmarks(self):
+        """Get the last detected landmarks."""
+        return self.last_landmarks
+
     def process_frame(self, frame):
         """
         Process a single frame to detect and draw hand landmarks.
@@ -73,9 +79,6 @@ class HandTracker:
                 print(f"Error during transform: {e}")
                 continue  # Skip processing this frame
 
-            # Debugging prints
-            #print(f"Shape before permute: {transformed_hand.shape}")  # Expect [1, C, H, W]
-
             # Ensure tensor has the correct shape before permuting
             if transformed_hand.dim() == 4:
                 transformed_hand = transformed_hand.squeeze(0)  # Remove batch dimension if exists
@@ -94,8 +97,10 @@ class HandTracker:
                 landmarks[i][0] = int(landmarks[i][0] * scale_x + x_min)
                 landmarks[i][1] = int(landmarks[i][1] * scale_y + y_min)
 
-            self.draw_landmarks(frame, landmarks)
+            # Store the landmarks
+            self.last_landmarks = landmarks
 
+            self.draw_landmarks(frame, landmarks)
 
     def draw_landmarks(self, frame, landmarks):
         """
