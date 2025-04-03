@@ -36,13 +36,11 @@ class HandTracker:
             keypoints = np.array(det[3:17]).reshape(7, 2)
             x_min, y_min = np.min(keypoints, axis=0)
             x_max, y_max = np.max(keypoints, axis=0)
-
             x_min, x_max = int(x_min * width), int(x_max * width)
             y_min, y_max = int(y_min * height), int(y_max * height)
 
             x_min, y_min = max(0, x_min), max(0, y_min)
             x_max, y_max = min(width, x_max), min(height, y_max)
-
             hand_crop = frame[y_min:y_max, x_min:x_max]
             if hand_crop.shape[0] == 0 or hand_crop.shape[1] == 0:
                 continue
