@@ -99,7 +99,7 @@ def train_gesture_classifier():
         # Check if we have sufficient data
         if len(frames) == 0:
             print("\nERROR: No training data found!")
-            print("Please run data_collection.py first to gather training samples.")
+            print("Please run collect_from_camera.py first to gather training samples.")
             return
         
         print(f"\nLoaded {len(frames)} training samples in {load_time:.2f} seconds")
@@ -127,7 +127,7 @@ def train_gesture_classifier():
         
     except FileNotFoundError as e:
         print(f"\nERROR: {e}")
-        print("Please run data_collection.py first to gather training samples.")
+        print("Please run collect_from_camera.py first to gather training samples.")
     except Exception as e:
         print(f"\nERROR: An unexpected error occurred: {e}")
 
