@@ -4,6 +4,7 @@ import tensorflow as tf
 import os
 import time
 from models.hand_tracker import HandTracker
+from models.simple_cnn_model import *
 
 class LiveTrainer:
     def __init__(self, model_path, learning_rate=0.001):
@@ -61,27 +62,9 @@ class LiveTrainer:
         
     def _setup_trainable_model(self):
         """Set up a trainable TensorFlow model for training."""
-        # Simple CNN model for gesture recognition
-        model = tf.keras.Sequential([
-            tf.keras.layers.Conv2D(32, (3, 3), activation='relu', 
-                                 input_shape=(self.input_height, self.input_width, 3)),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(64, activation='relu'),
-            tf.keras.layers.Dense(2, activation='softmax')  # Binary classification
-        ])
         
-        # Compile model
-        model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate),
-            loss='sparse_categorical_crossentropy',
-            metrics=['accuracy']
-        )
-        
-        self.trainable_model = model
+        self.trainable_model = create_gesture_model(input_shape=(self.input_height, self.input_width, 3),
+                                                     num_classes=2)
         print("Created trainable model")
         
     def preprocess_frame(self, frame):
