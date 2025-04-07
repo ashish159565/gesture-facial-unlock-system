@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from simple_cnn_model import create_peace_sign_model
+from models.simple_cnn_model import create_peace_sign_model
 from hand_tracker import *
 
 class GestureClassifier:
