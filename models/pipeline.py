@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from palm_detector import PalmDetector
 from keypoint_detector import KeyPointDetector
-from gesture_classifier import GestureClassifier
+from test.models.gesture_classifier import GestureClassifier
 
 # Initialize components
 palm_detector = PalmDetector()
