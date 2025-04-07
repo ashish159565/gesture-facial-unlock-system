@@ -13,15 +13,15 @@ class PalmDetector:
         confidence_threshold (float): Minimum confidence score for valid detections
     """
     
-    def __init__(self, model_path='models/palm_detection_full.tflite', confidence_threshold=0.9):
+    def __init__(self, model_path='/Users/neilisrani/Desktop/GestureRec/code/model_weights/palm_detection_full.tflite', confidence_threshold=0.7):
         """
         Initialize the palm detector with a pre-trained TFLite model.
         
         Args:
             model_path (str): Path to TensorFlow Lite model file.
-                            Default: 'models/palm_detection_full.tflite'
+                            Default: '/Users/neilisrani/Desktop/GestureRec/code/model_weights/palm_detection_full.tflite'
             confidence_threshold (float): Minimum confidence score (0-1) to accept detection.
-                                        Default: 0.9
+                                        Default: 0.7
         """
         self.interpreter = tflite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
@@ -69,10 +69,30 @@ class PalmDetector:
         
         detection_output = self.interpreter.get_tensor(self.output_details[0]['index'])
         
-        valid_detections = [
-            (d[2], d)
-            for d in detection_output[0]
-            if d[2] > self.confidence_threshold
-        ]
+        valid_detections = []
+        for detection in detection_output[0]:
+            confidence = detection[2]
+            if confidence > self.confidence_threshold:
+                # Convert relative coordinates to absolute coordinates
+                x_center, y_center, width, height = detection[:4]
+                frame_h, frame_w = frame.shape[:2]
+                
+                x_min = max(0, int((x_center - width/2) * frame_w))
+                y_min = max(0, int((y_center - height/2) * frame_h))
+                x_max = min(frame_w, int((x_center + width/2) * frame_w))
+                y_max = min(frame_h, int((y_center + height/2) * frame_h))
+                
+                # Add padding
+                padding = 20
+                x_min = max(0, x_min - padding)
+                y_min = max(0, y_min - padding)
+                x_max = min(frame_w, x_max + padding)
+                y_max = min(frame_h, y_max + padding)
+                
+                # Only add if the crop region is valid
+                if x_max > x_min and y_max > y_min:
+                    valid_detections.append((confidence, [x_min, y_min, x_max, y_max] + list(detection[4:])))
         
-        return [d[1] for d in sorted(valid_detections, key=lambda x: x[0], reverse=True)[:1]]
+        # Sort by confidence and return top detection
+        valid_detections.sort(key=lambda x: x[0], reverse=True)
+        return [d[1] for d in valid_detections[:1]]

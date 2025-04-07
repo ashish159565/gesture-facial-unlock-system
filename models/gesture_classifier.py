@@ -1,75 +1,124 @@
 import tensorflow as tf
 import numpy as np
-from .hand_tracker import HandTracker
+import os
+from tensorflow.keras.models import load_model
 
 class GestureClassifier:
-    def __init__(self):
-        """Initialize the gesture classifier."""
-        self.hand_tracker = HandTracker()
-        self.model = self._build_model()
-        
-    def _build_model(self):
-        """Build a simple CNN model for gesture classification."""
-        model = tf.keras.Sequential([
-            tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(128, 128, 3)),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(64, activation='relu'),
-            tf.keras.layers.Dense(2, activation='softmax')  # 2 classes: peace sign and not peace sign
-        ])
-        
-        model.compile(optimizer='adam',
-                     loss='sparse_categorical_crossentropy',
-                     metrics=['accuracy'])
-        return model
+    """
+    A class for detecting hand gestures using keypoints.
+    """
     
-    def preprocess_frame(self, frame):
-        """Preprocess a frame for the model."""
-        # Resize to 128x128
-        resized = tf.image.resize(frame, [128, 128])
-        # Normalize
-        normalized = resized / 255.0
-        return normalized
-    
-    def is_peace_sign(self, landmarks):
-        """Check if the hand landmarks form a peace sign."""
-        if len(landmarks) < 21:  # Need all 21 landmarks
-            return False
+    def __init__(self, model_path='model_weights/gesture_classifier.keras'):
+        """
+        Initialize the gesture classifier with a pre-trained model.
+        
+        Args:
+            model_path (str): Path to the saved model weights.
+        """
+        try:
+            self.model = load_model(model_path)
+            print(f"Successfully loaded model from {model_path}")
+        except:
+            print(f"Warning: Could not load model from {model_path}")
+            self.model = None
+
+    def preprocess_keypoints(self, keypoints):
+        """
+        Preprocess keypoints for model input.
+        
+        Args:
+            keypoints (numpy.ndarray): Array of keypoints with shape (21, 3)
             
-        # Get relevant keypoints for peace sign
-        index_tip = landmarks[8]  # Index finger tip
-        middle_tip = landmarks[12]  # Middle finger tip
-        ring_tip = landmarks[16]  # Ring finger tip
-        pinky_tip = landmarks[20]  # Pinky tip
+        Returns:
+            numpy.ndarray: Preprocessed keypoints
+        """
+        if keypoints is None or len(keypoints) == 0:
+            return None
+            
+        # Normalize coordinates to [0, 1]
+        x_min, x_max = np.min(keypoints[:, 0]), np.max(keypoints[:, 0])
+        y_min, y_max = np.min(keypoints[:, 1]), np.max(keypoints[:, 1])
+        z_min, z_max = np.min(keypoints[:, 2]), np.max(keypoints[:, 2])
         
-        # Check if index and middle fingers are extended
-        index_extended = index_tip[1] < landmarks[6][1]  # Y coordinate of tip is above middle joint
-        middle_extended = middle_tip[1] < landmarks[10][1]
+        if x_max - x_min < 1e-6 or y_max - y_min < 1e-6 or z_max - z_min < 1e-6:
+            return None
+            
+        # Normalize each coordinate
+        x_norm = (keypoints[:, 0] - x_min) / (x_max - x_min)
+        y_norm = (keypoints[:, 1] - y_min) / (y_max - y_min)
+        z_norm = (keypoints[:, 2] - z_min) / (z_max - z_min)
         
-        # Check if ring and pinky fingers are curled
-        ring_curled = ring_tip[1] > landmarks[14][1]
-        pinky_curled = pinky_tip[1] > landmarks[18][1]
+        # Stack normalized coordinates
+        processed = np.stack([x_norm, y_norm, z_norm], axis=1)
+        print(f"Processed keypoints shape: {processed.shape}")
         
-        return index_extended and middle_extended and ring_curled and pinky_curled
+        return processed
+
+    def predict(self, keypoints):
+        """
+        Predict gesture from keypoints.
+        
+        Args:
+            keypoints (numpy.ndarray): Array of keypoints with shape (21, 3)
+            
+        Returns:
+            tuple: (label, confidence, probabilities)
+        """
+        if self.model is None:
+            return 0, 0.0, None
+            
+        processed = self.preprocess_keypoints(keypoints)
+        if processed is None:
+            return 0, 0.0, None
+            
+        # Reshape for model input
+        processed = processed.reshape(1, 21, 3)
+        print(f"Model input shape: {processed.shape}")
+        
+        # Get prediction
+        probabilities = self.model.predict(processed, verbose=0)[0]
+        label = np.argmax(probabilities)
+        confidence = probabilities[label]
+        
+        print(f"Raw probabilities: {probabilities}")
+        print(f"Predicted label: {label}, confidence: {confidence}")
+        
+        return label, confidence, probabilities
     
-    def train(self, frames, labels):
-        """Train the model on collected frames."""
-        processed_frames = np.array([self.preprocess_frame(frame) for frame in frames])
-        self.model.fit(processed_frames, labels, epochs=10, validation_split=0.2)
+    def train_model(self, keypoints, labels, epochs=20, validation_split=0.2):
+        """
+        Train the model on keypoint data.
+        
+        Args:
+            keypoints (numpy.ndarray): Array of keypoints
+            labels (numpy.ndarray): Array of labels
+            epochs (int): Number of training epochs
+            validation_split (float): Fraction of data to use for validation
+            
+        Returns:
+            tf.keras.History: Training history object
+        """
+        # Preprocess keypoints
+        processed_keypoints = np.array([self.preprocess_keypoints(kp) for kp in keypoints])
+        processed_keypoints = processed_keypoints.reshape(len(keypoints), -1)
+        
+        # Train the model
+        history = self.model.fit(
+            processed_keypoints,
+            labels,
+            epochs=epochs,
+            validation_split=validation_split,
+            verbose=1
+        )
+        
+        return history
     
     def save_model(self, path):
-        """Save the trained model."""
-        self.model.save(path)
-    
-    def load_model(self, path):
-        """Load a trained model."""
-        self.model = tf.keras.models.load_model(path)
-    
-    def predict(self, frame):
-        """Predict if the frame contains a peace sign."""
-        processed_frame = self.preprocess_frame(frame)
-        prediction = self.model.predict(np.expand_dims(processed_frame, 0))
-        return prediction[0][1] > 0.5  # Return True if peace sign probability > 0.5 
+        """
+        Save the model weights.
+        
+        Args:
+            path (str): Path to save the model weights
+        """
+        self.model.save_weights(path)
+        print(f"Model weights saved to {path}") 
