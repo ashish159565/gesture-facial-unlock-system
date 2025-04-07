@@ -83,8 +83,7 @@ class FaceTracker:
                     name = known_name
                     best_match_score = min_distance
 
-            confidence = 1 - best_match_score 
-            self.draw_face_box(frame, left, top, right, bottom, name, confidence)
+            self.draw_face_box(frame, left, top, right, bottom, name, best_match_score)
     
     def draw_face_box(self, frame, x_min, y_min, x_max, y_max, name, confidence):
         """

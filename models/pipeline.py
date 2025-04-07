@@ -2,21 +2,24 @@ import cv2
 import numpy as np
 from palm_detector import PalmDetector
 from keypoint_detector import KeyPointDetector
-from test.models.gesture_classifier import GestureClassifier
+from gesture_classifier import GestureClassifier
+from face_tracker import FaceTracker
 
 # Initialize components
 palm_detector = PalmDetector()
 keypoint_detector = KeyPointDetector()
 gesture_classifier = GestureClassifier()
+face_tracker = FaceTracker()
 
 # Start video capture
-cap = cv2.VideoCapture("test_video.mp4")
+cap = cv2.VideoCapture(0)
 
 while True:
     ret, frame = cap.read()
     if not ret:
         break
-
+    
+    face_tracker.process_frame(frame)
     # Step 1: Palm Detection
     detections = palm_detector.detect(frame)
 
