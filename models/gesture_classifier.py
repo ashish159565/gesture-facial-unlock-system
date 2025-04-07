@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from .hand_tracker import HandTracker
-from .simple_cnn_model import create_peace_sign_model
+from simple_cnn_model import create_peace_sign_model
+from hand_tracker import *
 
 class GestureClassifier:
     """
@@ -132,4 +132,4 @@ class GestureClassifier:
         prediction_probabilities = self.model.predict(batch_input)
         peace_sign_probability = prediction_probabilities[0][1]
         
-        return peace_sign_probability > confidence_threshold 
+        return peace_sign_probability > confidence_threshold

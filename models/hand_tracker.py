@@ -21,7 +21,7 @@ class HandTracker:
         (13, 17), (0, 17), (17, 18), (18, 19), (19, 20)
     ]
 
-    def __init__(self, palmDetectorPath="/Users/neilisrani/Desktop/GestureRec/code/model_weights/palm_detection_full.tflite", keyPointModelPath="/Users/neilisrani/Desktop/GestureRec/code/model_weights/hand_landmark_full.tflite"):
+    def __init__(self, palmDetectorPath="/Users/brandanyong/Desktop/NEU Spring 2025/CS 5100 Foundations of AI Spring 2025 Lecture/Final Project/model_weights/palm_detection_full.tflite", keyPointModelPath="/Users/brandanyong/Desktop/NEU Spring 2025/CS 5100 Foundations of AI Spring 2025 Lecture/Final Project/model_weights/hand_landmark_full.tflite"):
         """
         Initialize HandTracker with palm detection and keypoint detection models.
         
