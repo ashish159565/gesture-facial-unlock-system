@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from models.gesture_classifier import GestureClassifier
+from test.models.gesture_classifier_2 import GestureClassifier
 
 def main():
     # Initialize classifier

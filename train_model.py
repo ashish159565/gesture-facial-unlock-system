@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import os
-from models.gesture_classifier import GestureClassifier
+from test.models.gesture_classifier_2 import GestureClassifier
 
 def load_training_data():
     """Load training data from the training_data directory."""
