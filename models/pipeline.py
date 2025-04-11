@@ -3,13 +3,11 @@ import numpy as np
 from palm_detector import PalmDetector
 from keypoint_detector import KeyPointDetector
 from gesture_classifier import GestureClassifier
-from face_tracker import FaceTracker
 
 # Initialize components
 palm_detector = PalmDetector()
 keypoint_detector = KeyPointDetector()
 gesture_classifier = GestureClassifier()
-face_tracker = FaceTracker()
 
 # Start video capture
 cap = cv2.VideoCapture(0)
@@ -19,28 +17,28 @@ while True:
     if not ret:
         break
     
-    face_tracker.process_frame(frame)
     # Step 1: Palm Detection
     detections = palm_detector.detect(frame)
 
     for detection in detections:
         # Extract bounding box coordinates
-        x_center, y_center, width, height = detection[0:4]
-        frame_h, frame_w, _ = frame.shape
-        x_min = int((x_center - width / 2) * frame_w)
-        y_min = int((y_center - height / 2) * frame_h)
-        x_max = int((x_center + width / 2) * frame_w)
-        y_max = int((y_center + height / 2) * frame_h)
+        x_min, y_min, x_max, y_max = map(int, detection[:4])
 
         # Crop hand region
         x_min = max(0, x_min)
         y_min = max(0, y_min)
-        x_max = min(frame_w, x_max)
-        y_max = min(frame_h, y_max)
+        x_max = min(frame.shape[1], x_max)
+        y_max = min(frame.shape[0], y_max)
         hand_crop = frame[y_min:y_max, x_min:x_max]
+        
+        if hand_crop.size == 0:
+            continue
 
         # Step 2: Keypoint Detection
         keypoints = keypoint_detector.detect(hand_crop)
+        
+        if keypoints is None or len(keypoints) == 0:
+            continue
 
         # Draw keypoints
         for kp in keypoints:
@@ -49,16 +47,19 @@ while True:
             cv2.circle(frame, (x_kp, y_kp), 3, (0, 255, 0), -1)
 
         # Step 3: Gesture Classification
-        encoded_keypoints = np.array([
-            x + y / 1000.0 for (x, y, _) in keypoints  # or just keypoints[:, 0:2]
-        ], dtype=np.float32)
+        # Flatten keypoints to match the expected input shape (63,)
+        encoded_keypoints = np.array(keypoints, dtype=np.float32).flatten()
 
-        label, confidence, _ = gesture_classifier.predict(encoded_keypoints)
-        print(f"Detected Gesture: {label} with confidence: {confidence:.2f}")
-
-        # Display prediction
-        cv2.putText(frame, f'{label} ({confidence:.2f})', (x_min, y_min - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+        try:
+            label, confidence, probabilities = gesture_classifier.predict(encoded_keypoints)
+            # Display prediction
+            cv2.putText(frame, f'{label} ({confidence:.2f})', (x_min, y_min - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+        except Exception as e:
+            print(f"Classification error: {e}")
+            # Add some debugging info
+            print(f"Keypoints shape: {keypoints.shape}")
+            print(f"Encoded keypoints shape: {encoded_keypoints.shape}")
 
         # Draw bounding box
         cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 255), 2)

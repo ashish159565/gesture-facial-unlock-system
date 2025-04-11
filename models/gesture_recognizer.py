@@ -4,7 +4,7 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
 
 class GestureRecognizer:
-    def __init__(self, model_path="gesture_model.tflite", label_path="gesture_labels.txt"):
+    def __init__(self, model_path="'/Users/neilisrani/Desktop/AHISH/AHH/model_weights/gesture_model.tflite", label_path="gesture_labels.txt"):
         self.model_path = model_path
         self.label_path = label_path
         self.interpreter = None
