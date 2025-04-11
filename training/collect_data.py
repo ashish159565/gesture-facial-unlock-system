@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.gesture_classifier import GestureClassifier
+from test.models.gesture_classifier_2 import GestureClassifier
 
 def setup_data_directories(class_names):
     """

@@ -6,8 +6,7 @@ class KeyPointDetector:
     """
     A class for detecting hand keypoints using a TensorFlow Lite model.
     """
-    
-    def __init__(self, model_path='models/hand_landmark_full.tflite'):
+    def __init__(self, model_path='/Users/neilisrani/Desktop/AHISH/AHH/model_weights/hand_landmark_full.tflite'):
         """
         Initialize the keypoint detector with a pre-trained TFLite model.
         

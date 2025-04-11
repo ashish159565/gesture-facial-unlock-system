@@ -13,7 +13,7 @@ class PalmDetector:
         confidence_threshold (float): Minimum confidence score for valid detections
     """
     
-    def __init__(self, model_path='models/palm_detection_full.tflite', confidence_threshold=0.9):
+    def __init__(self, model_path='/Users/neilisrani/Desktop/AHISH/AHH/model_weights/palm_detection_full.tflite', confidence_threshold=0.9):
         """
         Initialize the palm detector with a pre-trained TFLite model.
         

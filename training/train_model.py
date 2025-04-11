@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import os
 import time
-from models.gesture_classifier import GestureClassifier
+from test.models.gesture_classifier_2 import GestureClassifier
 
 def load_training_data(base_dir="training_data"):
     """
