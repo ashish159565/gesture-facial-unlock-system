@@ -1,9 +1,16 @@
 import cv2
 import numpy as np
-from palm_detector import PalmDetector
-from keypoint_detector import KeyPointDetector
-from gesture_classifier import GestureClassifier
 import os
+import sys
+
+# Get the absolute path to the project root
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+from config import SIGNALS_DIR, PALM_DETECTION_MODEL, HAND_LANDMARK_MODEL
+from models.palm_detector import PalmDetector
+from models.keypoint_detector import KeyPointDetector
+from models.gesture_classifier import GestureClassifier
 
 # Define hand connections
 HAND_CONNECTIONS = [
@@ -15,7 +22,6 @@ HAND_CONNECTIONS = [
 ]
 
 # Load signal images
-SIGNALS_DIR = "/Users/neilisrani/Desktop/AHISH/AHH/signals"
 GREEN_IMG = cv2.imread(os.path.join(SIGNALS_DIR, "green.png"))
 RED_IMG = cv2.imread(os.path.join(SIGNALS_DIR, "red.png"))
 
@@ -46,8 +52,8 @@ def show_signal_window(image, window_name="Signal"):
     cv2.destroyWindow(window_name)
 
 # Initialize components
-palm_detector = PalmDetector()
-keypoint_detector = KeyPointDetector()
+palm_detector = PalmDetector(model_path=PALM_DETECTION_MODEL)
+keypoint_detector = KeyPointDetector(model_path=HAND_LANDMARK_MODEL)
 gesture_classifier = GestureClassifier()
 
 # Start video capture
@@ -105,7 +111,7 @@ while True:
             scaled_keypoints.append((x_kp, y_kp, confidence))
             cv2.circle(frame, (x_kp, y_kp), 3, (0, 255, 0), -1)
 
-        # Draw landmarks and connections
+        # Draw landmarks and connections only if palm is detected
         draw_landmarks(frame, scaled_keypoints)
 
         # Step 3: Gesture Classification

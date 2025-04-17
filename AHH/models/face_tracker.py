@@ -3,6 +3,13 @@ import numpy as np
 import face_recognition
 import pickle
 import os
+import sys
+
+# Get the absolute path to the project root
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+from config import USERS_DIR
 
 def save_face_encodings(images_paths, pickle_path="model_weights/known_faces.pkl"):
         """
@@ -32,10 +39,16 @@ class FaceTracker:
     A class to track and recognize faces in video streams using OpenCV and face_recognition.
     """
     def __init__(self):
+        """
+        Initialize the face tracker.
+        """
         self.known_face_encodings = []
         self.known_face_names = []
-        self.users_dir = "/Users/neilisrani/Desktop/AHISH/AHH/users"
+        self.users_dir = USERS_DIR
         
+        # Create users directory if it doesn't exist
+        os.makedirs(self.users_dir, exist_ok=True)
+
     def save_face_encodings(self, face_data):
         """
         Save face encodings for known faces.

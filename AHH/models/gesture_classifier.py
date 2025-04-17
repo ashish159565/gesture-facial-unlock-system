@@ -1,43 +1,36 @@
-import numpy as np
 import tensorflow.lite as tflite
+import numpy as np
 import os
+import sys
+
+# Get the absolute path to the project root
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+from config import GESTURE_MODEL, GESTURE_LABELS
 
 class GestureClassifier:
     """
     A class for classifying hand gestures using a TensorFlow Lite model.
     """
     
-    def __init__(self, model_path=None, label_path=None):
+    def __init__(self, model_path=GESTURE_MODEL, label_path=GESTURE_LABELS):
         """
-        Initialize the gesture classifier with a TFLite model and labels.
+        Initialize the gesture classifier.
         
         Args:
-            model_path (str): Path to TensorFlow Lite model file.
-            label_path (str): Path to text file containing gesture labels.
+            model_path (str): Path to the TFLite model file. Default: Uses path from config
+            label_path (str): Path to the labels file. Default: Uses path from config
         """
-        if model_path is None:
-            # Default path relative to the script location
-            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            model_path = "/Users/neilisrani/Desktop/AHISH/AHH/model_weights/gesture_model.tflite"
-        
-        if label_path is None:
-            # Default path relative to the script location
-            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            label_path = "/Users/neilisrani/Desktop/AHISH/AHH/model_weights/gesture_labels.txt"
-            
-            # If labels file doesn't exist, create a default one
-            if not os.path.exists(label_path):
-                os.makedirs(os.path.dirname(label_path), exist_ok=True)
-                with open(label_path, 'w') as f:
-                    f.write("not_peace\npeace")
-                print(f"Created default labels file at {label_path}")
-        
-        print(f"Loading model from {model_path}")
         self.interpreter = tflite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
-
+        
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
+        
+        # Load labels
+        with open(label_path, 'r') as f:
+            self.labels = [line.strip() for line in f.readlines()]
         
         # Load normalization parameters
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -47,9 +40,6 @@ class GestureClassifier:
         # Print input shape for debugging
         input_shape = self.input_details[0]['shape']
         print(f"Model expects input shape: {input_shape}")
-        
-        self.labels = self._load_labels(label_path)
-        print(f"Loaded {len(self.labels)} labels: {self.labels}")
 
     def _load_labels(self, label_path):
         """

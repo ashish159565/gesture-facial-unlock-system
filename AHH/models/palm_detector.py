@@ -1,6 +1,14 @@
 import cv2
 import numpy as np
 import tensorflow.lite as tflite
+import os
+import sys
+
+# Get the absolute path to the project root
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+from config import PALM_DETECTION_MODEL
 
 class PalmDetector:
     """
@@ -13,13 +21,13 @@ class PalmDetector:
         confidence_threshold (float): Minimum confidence score for valid detections
     """
     
-    def __init__(self, model_path='/Users/neilisrani/Desktop/AHISH/AHH/model_weights/palm_detection_full.tflite', confidence_threshold=0.9):
+    def __init__(self, model_path=PALM_DETECTION_MODEL, confidence_threshold=0.9):
         """
         Initialize the palm detector with a pre-trained TFLite model.
         
         Args:
             model_path (str): Path to TensorFlow Lite model file.
-                            Default: 'models/palm_detection_full.tflite'
+                            Default: Uses path from config
             confidence_threshold (float): Minimum confidence score (0-1) to accept detection.
                                         Default: 0.9
         """

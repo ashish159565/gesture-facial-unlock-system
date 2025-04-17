@@ -1,18 +1,26 @@
 import cv2
 import numpy as np
 import tensorflow.lite as tflite
+import os
+import sys
+
+# Get the absolute path to the project root
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+from config import HAND_LANDMARK_MODEL
 
 class KeyPointDetector:
     """
     A class for detecting hand keypoints using a TensorFlow Lite model.
     """
-    def __init__(self, model_path='/Users/neilisrani/Desktop/AHISH/AHH/model_weights/hand_landmark_full.tflite'):
+    def __init__(self, model_path=HAND_LANDMARK_MODEL):
         """
         Initialize the keypoint detector with a pre-trained TFLite model.
         
         Args:
             model_path (str): Path to TensorFlow Lite model file. 
-                              Default: 'models/hand_landmark_full.tflite'
+                              Default: Uses path from config
         """
         self.interpreter = tflite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
