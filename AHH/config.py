@@ -17,5 +17,8 @@ PALM_DETECTION_MODEL = os.path.join(MODEL_WEIGHTS_DIR, "palm_detection_full.tfli
 HAND_LANDMARK_MODEL = os.path.join(MODEL_WEIGHTS_DIR, "hand_landmark_full.tflite")
 GESTURE_MODEL = os.path.join(MODEL_WEIGHTS_DIR, "gesture_model.tflite")
 GESTURE_LABELS = os.path.join(MODEL_WEIGHTS_DIR, "gesture_labels.txt")
+<<<<<<< HEAD
 
 # Print paths for debugging
+=======
+>>>>>>> 80247907c91135e8180950a19ac3f8841621cdf2
