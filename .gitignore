@@ -173,3 +173,7 @@ cython_debug/
 
 # Data Files
 data/images
+wider_face_split/
+WIDER_train/
+WIDER_val/
+natural_images/
