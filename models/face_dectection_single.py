@@ -229,28 +229,63 @@ def create_dataset(data, batch_size=32):
     return dataset
 
 
+# def build_single_face_detector(input_shape=(224, 224, 3)):
+#     inputs = tf.keras.Input(shape=input_shape)
+
+#     x = tf.keras.layers.SeparableConv2D(32, 3, activation='relu', padding='same')(inputs)
+#     x = tf.keras.layers.BatchNormalization()(x)
+#     x = tf.keras.layers.MaxPooling2D()(x)
+
+#     x = tf.keras.layers.SeparableConv2D(64, 3, activation='relu', padding='same')(x)
+#     x = tf.keras.layers.BatchNormalization()(x)
+#     x = tf.keras.layers.MaxPooling2D()(x)
+
+#     x = tf.keras.layers.SeparableConv2D(128, 3, activation='relu', padding='same')(x)
+#     x = tf.keras.layers.BatchNormalization()(x)
+
+#     x = tf.keras.layers.GlobalAveragePooling2D()(x)
+#     x = tf.keras.layers.Dense(256, activation='relu')(x)
+#     x = tf.keras.layers.Dropout(0.3)(x)
+
+#     cls_output = tf.keras.layers.Dense(1, activation='sigmoid', name='cls_output')(x)
+#     reg_output = tf.keras.layers.Dense(4, activation='sigmoid', name='reg_output')(x)
+
+#     return tf.keras.Model(inputs, [cls_output, reg_output])
+
 def build_single_face_detector(input_shape=(224, 224, 3)):
     inputs = tf.keras.Input(shape=input_shape)
 
+    # Shared Backbone (Reduced Pooling)
     x = tf.keras.layers.SeparableConv2D(32, 3, activation='relu', padding='same')(inputs)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.MaxPooling2D()(x)
+    x = tf.keras.layers.MaxPooling2D(2)(x)  # 112x112
 
     x = tf.keras.layers.SeparableConv2D(64, 3, activation='relu', padding='same')(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.MaxPooling2D()(x)
+    x = tf.keras.layers.MaxPooling2D(2)(x)  # 56x56
 
-    x = tf.keras.layers.SeparableConv2D(128, 3, activation='relu', padding='same')(x)
-    x = tf.keras.layers.BatchNormalization()(x)
+    # Multi-Scale Feature Extraction
+    shared_conv = tf.keras.layers.SeparableConv2D(128, 3, activation='relu', padding='same')(x)
+    shared_conv = tf.keras.layers.BatchNormalization()(shared_conv)
 
-    x = tf.keras.layers.GlobalAveragePooling2D()(x)
-    x = tf.keras.layers.Dense(256, activation='relu')(x)
-    x = tf.keras.layers.Dropout(0.3)(x)
+    # Classification Branch (Enhanced)
+    cls_branch = tf.keras.layers.GlobalAveragePooling2D()(shared_conv)
+    cls_branch = tf.keras.layers.Dense(256, activation='relu')(cls_branch)
+    cls_branch = tf.keras.layers.Dropout(0.3)(cls_branch)
+    cls_output = tf.keras.layers.Dense(1, activation='sigmoid', name='cls_output')(cls_branch)
 
-    cls_output = tf.keras.layers.Dense(1, activation='sigmoid', name='cls_output')(x)
-    reg_output = tf.keras.layers.Dense(4, activation='sigmoid', name='reg_output')(x)
+    # Regression Branch (Spatial-Aware)
+    reg_branch = tf.keras.layers.Concatenate()([x, shared_conv])  # Multi-scale fusion
+    reg_branch = tf.keras.layers.SeparableConv2D(128, 3, activation='relu', padding='same')(reg_branch)
+    reg_branch = tf.keras.layers.BatchNormalization()(reg_branch)
+    reg_branch = tf.keras.layers.SeparableConv2D(64, 3, activation='relu', padding='same')(reg_branch)
+    reg_branch = tf.keras.layers.BatchNormalization()(reg_branch)
+    reg_branch = tf.keras.layers.GlobalMaxPooling2D()(reg_branch)  # Alternative pooling
+    reg_branch = tf.keras.layers.Dense(128, activation='relu')(reg_branch)
+    reg_output = tf.keras.layers.Dense(4, activation='sigmoid', name='reg_output')(reg_branch)
 
     return tf.keras.Model(inputs, [cls_output, reg_output])
+
 
 
 
@@ -380,110 +415,111 @@ def test_letterboxing():
 
 # Example usage
 
-# test_letterboxing()
+if __name__ == "__main__":
+    # test_letterboxing()
 
-# Parse training and validation data
-train_data = parse_wider_annotations('wider_face_split/wider_face_train_bbx_gt.txt', 'WIDER_train/images')
-val_data = parse_wider_annotations('wider_face_split/wider_face_val_bbx_gt.txt', 'WIDER_val/images')
-background_train, background_val = sample_background_images('natural_images', sample_size=5000, train_split=0.8)
-train_data = train_data+background_train
-val_data = val_data+background_val
+    # Parse training and validation data
+    train_data = parse_wider_annotations('wider_face_split/wider_face_train_bbx_gt.txt', 'WIDER_train/images')
+    val_data = parse_wider_annotations('wider_face_split/wider_face_val_bbx_gt.txt', 'WIDER_val/images')
+    background_train, background_val = sample_background_images('natural_images', sample_size=5000, train_split=0.8)
+    train_data = train_data+background_train
+    val_data = val_data+background_val
 
-# # # Create datasets
-train_dataset = create_dataset(train_data)
-val_dataset = create_dataset(val_data)
+    # # # Create datasets
+    train_dataset = create_dataset(train_data)
+    val_dataset = create_dataset(val_data)
 
-model = build_single_face_detector()
+    model = build_single_face_detector()
 
-train_target_dataset = prepare_single_face_dataset(train_dataset).repeat()
-val_target_dataset = prepare_single_face_dataset(val_dataset).repeat()
+    train_target_dataset = prepare_single_face_dataset(train_dataset).repeat()
+    val_target_dataset = prepare_single_face_dataset(val_dataset).repeat()
 
-def compute_class_balance(dataset, num_batches=100):
-    total_pos = 0
-    total_neg = 0
+    def compute_class_balance(dataset, num_batches=100):
+        total_pos = 0
+        total_neg = 0
 
-    for i, (images, (cls_target, _)) in enumerate(dataset.take(num_batches)):
-        # Calculate positives and negatives using TensorFlow operations
-        pos = tf.reduce_sum(tf.cast(cls_target == 1.0, tf.int32))
-        neg = tf.reduce_sum(tf.cast(cls_target == 0.0, tf.int32))
+        for i, (images, (cls_target, _)) in enumerate(dataset.take(num_batches)):
+            # Calculate positives and negatives using TensorFlow operations
+            pos = tf.reduce_sum(tf.cast(cls_target == 1.0, tf.int32))
+            neg = tf.reduce_sum(tf.cast(cls_target == 0.0, tf.int32))
 
-        total_pos += pos.numpy()  # Get actual value for summing
-        total_neg += neg.numpy()  # Get actual value for summing
+            total_pos += pos.numpy()  # Get actual value for summing
+            total_neg += neg.numpy()  # Get actual value for summing
 
-    print(f"✅ Estimated positives (faces): {total_pos}")
-    print(f"❌ Estimated negatives (background): {total_neg}")
-    print(f"📊 Class imbalance estimate: 1 positive to {round(total_neg / max(total_pos, 1), 2)} negatives")
+        print(f"✅ Estimated positives (faces): {total_pos}")
+        print(f"❌ Estimated negatives (background): {total_neg}")
+        print(f"📊 Class imbalance estimate: 1 positive to {round(total_neg / max(total_pos, 1), 2)} negatives")
 
-    return total_pos, total_neg
-    
-compute_class_balance(train_target_dataset, 269)
+        return total_pos, total_neg
+        
+    compute_class_balance(train_target_dataset, 269)
 
 # Compile model
-model.compile(
-    # optimizer=tf.keras.optimizers.legacy.Adam(1e-4),
-    optimizer=tf.keras.optimizers.Adam(1e-4),
-    loss={'cls_output': cls_loss, 'reg_output': reg_loss},
-    loss_weights={'cls_output': 1.0, 'reg_output': 0.5},
-    metrics={'cls_output': 'accuracy'}
-)
-
-# Callbacks
-callbacks = [
-    tf.keras.callbacks.ModelCheckpoint(
-        'face_detector.keras',
-        save_best_only=True,
-        monitor='val_cls_output_accuracy',
-        mode='max'
-    ),
-    tf.keras.callbacks.ReduceLROnPlateau(
-        monitor='val_loss',
-        factor=0.5,
-        patience=3
-    ),
-    tf.keras.callbacks.EarlyStopping(
-        monitor='val_cls_output_accuracy',  # or 'val_loss'
-        mode='max',
-        patience=5,  # how many epochs to wait before stopping
-        restore_best_weights=True  # revert to the best model weights
+    model.compile(
+        # optimizer=tf.keras.optimizers.legacy.Adam(1e-4),
+        optimizer=tf.keras.optimizers.Adam(1e-4),
+        loss={'cls_output': cls_loss, 'reg_output': reg_loss},
+        loss_weights={'cls_output': 1.0, 'reg_output': 10.0},
+        metrics={'cls_output': 'accuracy'}
     )
-]
 
-# Train model
-history = model.fit(
-    train_target_dataset,
-    epochs=50,
-    validation_data=val_target_dataset,
-    steps_per_epoch=len(train_data) // 32,
-    validation_steps=len(val_data) // 32,
-    callbacks=callbacks
-)
+    # Callbacks
+    callbacks = [
+        tf.keras.callbacks.ModelCheckpoint(
+            'face_detector.keras',
+            save_best_only=True,
+            monitor='val_cls_output_accuracy',
+            mode='max'
+        ),
+        tf.keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=3
+        ),
+        tf.keras.callbacks.EarlyStopping(
+            monitor='val_cls_output_accuracy',  # or 'val_loss'
+            mode='max',
+            patience=5,
+            restore_best_weights=True  # revert to the best model weights
+        )
+    ]
 
-model.save("model.keras", save_format="keras")
+    # Train model
+    history = model.fit(
+        train_target_dataset,
+        epochs=50,
+        validation_data=val_target_dataset,
+        steps_per_epoch=len(train_data) // 32,
+        validation_steps=len(val_data) // 32,
+        callbacks=callbacks
+    )
 
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    model.save("model.keras", save_format="keras")
 
-def representative_dataset():
-    for _ in range(100):  # Adjust based on your dataset
-        # Yield preprocessed input tensors
-        yield [np.random.uniform(0,1, size=(1,224,224,3)).astype(np.float32)]  # Example shape
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
-# Enable quantization
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    def representative_dataset():
+        for _ in range(100):  # Adjust based on your dataset
+            # Yield preprocessed input tensors
+            yield [np.random.uniform(0,1, size=(1,224,224,3)).astype(np.float32)]  # Example shape
 
-# Optional but safe to include
-converter.optimizations = []  # No quantization
-converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+    # Enable quantization
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
-# Important: Keep these as float32
-converter.inference_input_type = tf.float32
-converter.inference_output_type = tf.float32
+    # Optional but safe to include
+    converter.optimizations = []  # No quantization
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
 
-# Convert the model
-tflite_model = converter.convert()
+    # Important: Keep these as float32
+    converter.inference_input_type = tf.float32
+    converter.inference_output_type = tf.float32
+
+    # Convert the model
+    tflite_model = converter.convert()
 
 
-tflite_model = converter.convert()
-with open('model_quant_rpi.tflite', 'wb') as f:
-    f.write(tflite_model)
+    tflite_model = converter.convert()
+    with open('model_quant_rpi.tflite', 'wb') as f:
+        f.write(tflite_model)
 
 
