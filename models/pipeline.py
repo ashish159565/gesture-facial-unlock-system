@@ -11,6 +11,7 @@ from config import SIGNALS_DIR, PALM_DETECTION_MODEL, HAND_LANDMARK_MODEL
 from models.palm_detector import PalmDetector
 from models.keypoint_detector import KeyPointDetector
 from models.gesture_classifier import GestureClassifier
+from models.face_tracker import FaceTracker
 
 # Define hand connections
 HAND_CONNECTIONS = [
@@ -30,8 +31,6 @@ peace_count = 0
 not_peace_count = 0
 CONSECUTIVE_THRESHOLD = 20
 
-# Load face detection classifier
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 # Draw landmarks and connections
 def draw_landmarks(frame, landmarks):
@@ -55,6 +54,7 @@ def show_signal_window(image, window_name="Signal"):
 palm_detector = PalmDetector(model_path=PALM_DETECTION_MODEL)
 keypoint_detector = KeyPointDetector(model_path=HAND_LANDMARK_MODEL)
 gesture_classifier = GestureClassifier()
+face_tracker = FaceTracker()
 
 # Start video capture
 cap = cv2.VideoCapture(0)
@@ -66,13 +66,8 @@ while True:
 
     # Simple face detection
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-    
-    for (x, y, w, h) in faces:
-        # Draw green rectangle around face
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        # Add "neil" label
-        cv2.putText(frame, "neil", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+    face_tracker.process_frame(frame)
 
     # Step 1: Palm Detection
     detections = palm_detector.detect(frame)
