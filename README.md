@@ -38,14 +38,33 @@ This project presents a smart lock system that utilizes hand gesture recognition
    ```bash  
    pip install -r requirements.txt  
    ```  
+3. Install `dlib` (if needed):  
+   If you run into issues installing `dlib`, see the  
+   [dlib installation guide](https://gist.github.com/ageitgey/629d75c1baac34dfa5ca2a1928a7aeaf).
+
 3. Export Python Path:
    ```bash
    export PYTHOnPATH=$PWD
    ```
 4. Run the system:  
    ```bash  
-   python models/hand_tracker.py  
+   python models/pipeline.py  
    ```  
+
+## Adding New Faces  
+
+To add a new face to the system, follow these steps:
+
+1. **Prepare Images:**  
+   Ensure that you have clear images of the new individual’s face. The higher the image quality, the better the recognition accuracy. 
+
+2. **Use the `save_face_encodings.py` Script:**  
+   This script processes images, extracts face encodings, and saves them for future use. You can add new faces by running the script with the name and image path of the individual.
+
+   **Usage:**  
+   ```bash
+   python models/save_face_encodings.py <name1> <image_path1> <name2> <image_path2> ...
+   ```
   
 
 ## Contributors  
